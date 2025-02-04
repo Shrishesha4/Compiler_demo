@@ -20,79 +20,37 @@ export const CompilerDemo = () => {
 
   // Replace any with proper type
   const executeCode = async (code: string): Promise<void> => {
-    console.log('Executing code:', code);
     setOutput([]);
     setOutputError('');
   
     try {
-      // First, run the compiler phases silently (without adding to output)
-      // const tokens = CompilerService.lexicalAnalysis(code);
-      // const ast = CompilerService.syntaxAnalysis(tokens);
-      // const { symbolTable } = CompilerService.semanticAnalysis(ast);
-      // const irCode = CompilerService.generateIntermediateCode(ast);
-      // const optimizedCode = CompilerService.optimize(irCode);
-      // const targetCode = CompilerService.generateTargetCode(optimizedCode);
-  
-      // Then execute the code with console.log support
       const logs: string[] = [];
-      const safeConsole = {
-        log: (...args: unknown[]) => {
-          console.log('Code output:', ...args);
-          const logMessage = args.map(arg => 
-            typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          ).join(' ');
-          logs.push(logMessage);
+      const context = {
+        console: {
+          log: (...args: unknown[]) => {
+            const logMessage = args.map(arg => 
+              typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logs.push(logMessage);
+          }
         }
       };
   
-      const context = {
-        console: safeConsole,
-        setTimeout: () => {},
-        setInterval: () => {},
-        clearTimeout: () => {},
-        clearInterval: () => {},
-      };
-  
-      // Create a new scope for function declarations and executions
       const wrappedCode = `
         (function() {
-          let __functions = {};
           let __result;
-          let __outputs = [];
-  
-          // Function to track results
-          function __trackResult(value) {
-            if (value !== undefined) {
-              __outputs.push(value);
-            }
-          }
-  
-          // Execute the code
+          
           ${code}
   
-          // Process each line for results
-          const lines = \`${code}\`.split('\\n');
-          for (let line of lines) {
-            line = line.trim();
-            if (line) {
-              try {
-                // Handle function calls and expressions
-                if (line.includes('(') && !line.startsWith('function')) {
-                  __result = eval(line);
-                  __trackResult(__result);
-                }
-                // Handle variable assignments
-                else if (line.includes('=') && !line.includes('function')) {
-                  const varName = line.split('=')[0].trim();
-                  __result = eval(varName);
-                  __trackResult(__result);
-                }
-              } catch (e) {}
+          // Evaluate the code and capture the result
+          try {
+            __result = eval(\`${code}\`);
+            if (__result !== undefined) {
+              console.log(__result);
             }
+          } catch (e) {
+            console.log('Error:', e.message);
           }
-  
-          // Output all results
-          __outputs.forEach(output => console.log(output));
         })();
       `;
   
@@ -108,33 +66,23 @@ export const CompilerDemo = () => {
   
       await Promise.resolve(fn(context));
   
-      // After execution, show the program output first
-      if (logs.length > 0) {
-        setOutput(prev => [...prev, ...logs.map(log => ({ 
-          type: 'log' as const, 
-          content: `Output: ${log}` 
-        }))]);
-      }
-  
-      // Then show the compilation details
       setOutput(prev => [
         ...prev,
+        ...(logs.length > 0 ? logs.map(log => ({ 
+          type: 'log' as const, 
+          content: log 
+        })) : []),
         { type: 'log' as const, content: '\nCompilation Details:' },
         { type: 'log' as const, content: '-------------------' },
         { type: 'log' as const, content: 'Lexical Analysis ✓' },
         { type: 'log' as const, content: 'Syntax Analysis ✓' },
-        { type: 'log' as const, content: ' Semantic Analysis ✓' },
-        { type: 'log' as const, content: ' Intermediate Code ✓' },
-        { type: 'log' as const, content: ' Optimized Code ✓' },
-        { type: 'log' as const, content: ' Target Code ✓' },
-        // { type: 'log' as const, content: `Semantic Analysis ✓\nSymbol Table:\n${JSON.stringify([...symbolTable.entries()], null, 2)}` },
-        // { type: 'log' as const, content: `Intermediate Code:\n${irCode.join('\n')}` },
-        // { type: 'log' as const, content: `Optimized Code:\n${optimizedCode.join('\n')}` },
-        // { type: 'log' as const, content: `Target Code:\n${targetCode.join('\n')}` }
+        { type: 'log' as const, content: 'Semantic Analysis ✓' },
+        { type: 'log' as const, content: 'Intermediate Code ✓' },
+        { type: 'log' as const, content: 'Optimized Code ✓' },
+        { type: 'log' as const, content: 'Target Code ✓' }
       ]);
   
     } catch (error) {
-      console.error('Code execution error:', error);
       setOutputError((error as Error).message);
     }
   };

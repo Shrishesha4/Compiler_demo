@@ -230,66 +230,36 @@ export class CompilerService {
     function parseExpression(): ASTNode {
       let left = parsePrimary();
 
-      while (current < tokens.length) {
-        // Handle member expressions (e.g., console.log)
-        if (tokens[current]?.value === '.') {
-          current++; // Skip the dot
-          if (current < tokens.length && tokens[current].type === 'identifier') {
-            const memberName = tokens[current].value;
-            current++; // Move past the member name
-            left = {
-              type: 'MemberExpression',
-              value: '.',
-              children: [
-                left,
-                { type: 'Identifier', value: memberName }
-              ]
-            };
-    
-            // Check if this is a method call
-            if (current < tokens.length && tokens[current]?.value === '(') {
-              current++; // Skip opening parenthesis
-              const args: ASTNode[] = [];
-              
-              while (current < tokens.length && tokens[current].value !== ')') {
-                args.push(parseExpression());
-                if (tokens[current]?.value === ',') {
-                  current++; // Skip comma
-                }
-              }
-    
-              if (current >= tokens.length || tokens[current].value !== ')') {
-                throw new CompilerError('Expected closing parenthesis', 'syntax');
-              }
-              current++; // Skip closing parenthesis
-    
-              left = {
-                type: 'CallExpression',
-                value: 'call',
-                children: [left, ...args]
-              };
-            }
-            continue;
-          }
+      while (current < tokens.length && isOperator(tokens[current].value)) {
+        const operator = tokens[current].value;
+        current++;
+        const right = parsePrimary();
+        left = {
+          type: 'BinaryExpression',
+          value: operator,
+          children: [left, right]
+        };
+      }
+
+      if (tokens[current]?.value === '.') {
+        current++;
+        const right = tokens[current];
+        if (right?.type === 'identifier') {
+          current++;
+          const node: ASTNode = {
+            type: 'MemberExpression',
+            value: '.',
+            children: [
+              left,
+              { type: 'Identifier', value: right.value }
+            ]
+          };
+          left = node;
+        } else {
           throw new CompilerError('Expected identifier after dot', 'syntax');
         }
-    
-        // Handle other operators
-        if (isOperator(tokens[current]?.value)) {
-          const operator = tokens[current].value;
-          current++;
-          const right = parsePrimary();
-          left = {
-            type: 'BinaryExpression',
-            value: operator,
-            children: [left, right]
-          };
-          continue;
-        }
-    
-        break;
       }
-    
+
       return left;
     }
 
@@ -380,12 +350,8 @@ export class CompilerService {
       const tokens: Token[] = [];
       const keywords = new Set([
         'let', 'const', 'var', 'if', 'else', 'while', 'for', 'function', 
-        'return', 'class', 'extends', 'new', 'this', 'super'
+        'return', 'class', 'extends', 'new', 'this', 'super', 'console'  // Added console
       ]);
-
-      // Add built-in objects
-      const builtInObjects = new Set(['console']);
-
       const operators = new Set([
         '+', '-', '*', '/', '=', '<', '>', '!', '&', '|', '(', ')', '{', '}', '[', ']',
         ';', ',', '.', '+=', '-=', '*=', '/=', '==', '===', '!=', '!==', '>=', '<='
@@ -417,12 +383,8 @@ export class CompilerService {
             column++;
           }
           
-          // Check if it's a built-in object
-          const isBuiltIn = Array.from(builtInObjects.keys()).includes(identifier);
-          
           tokens.push({
-            type: keywords.has(identifier) ? 'keyword' : 
-                  isBuiltIn ? 'builtin' : 'identifier',
+            type: keywords.has(identifier) ? 'keyword' : 'identifier',
             value: identifier,
             line,
             column: startColumn
