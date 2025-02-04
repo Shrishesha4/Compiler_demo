@@ -217,129 +217,6 @@ export class CompilerService {
       return node;
     }
 
-    function walk(): ASTNode {
-      if (current >= tokens.length) {
-        throw new CompilerError('Unexpected end of input', 'syntax');
-      }
-    
-      const token = tokens[current];
-    
-      // Handle blocks
-      if (token.value === '{') {
-        current++;
-        const node: ASTNode = {
-          type: 'Block',
-          children: []
-        };
-    
-        while (current < tokens.length && tokens[current].value !== '}') {
-          node.children?.push(walk());
-        }
-        current++; // Skip closing brace
-        return node;
-      }
-    
-      // Handle if statements
-      if (token.type === 'keyword' && token.value === 'if') {
-        current++;
-        const node: ASTNode = {
-          type: 'IfStatement',
-          children: []
-        };
-    
-        // Parse condition
-        if (tokens[current].value === '(') {
-          current++;
-          node.children?.push(parseExpression());
-          if (tokens[current].value === ')') {
-            current++;
-          }
-        }
-    
-        // Parse body
-        node.children?.push(walk());
-    
-        // Handle else
-        if (current < tokens.length && tokens[current].type === 'keyword' && tokens[current].value === 'else') {
-          current++;
-          node.children?.push(walk());
-        }
-    
-        return node;
-      }
-    
-      // Handle function declarations
-      if (token.type === 'keyword' && token.value === 'function') {
-        current++;
-        const node: ASTNode = {
-          type: 'FunctionDeclaration',
-          children: []
-        };
-    
-        // Function name
-        if (current < tokens.length && tokens[current].type === 'identifier') {
-          node.value = tokens[current].value;
-          current++;
-        }
-    
-        // Parameters
-        if (tokens[current].value === '(') {
-          current++;
-          while (current < tokens.length && tokens[current].value !== ')') {
-            if (tokens[current].type === 'identifier') {
-              node.children?.push({
-                type: 'Parameter',
-                value: tokens[current].value
-              });
-            }
-            current++;
-            if (tokens[current].value === ',') current++;
-          }
-          current++; // Skip closing parenthesis
-        }
-    
-        // Function body
-        if (tokens[current].value === '{') {
-          node.children?.push(walk());
-        }
-    
-        return node;
-      }
-    
-      // Handle variable declarations
-      if (token.type === 'keyword' && (token.value === 'let' || token.value === 'const' || token.value === 'var')) {
-        current++;
-        const node: ASTNode = {
-          type: 'VariableDeclaration',
-          value: token.value,
-          children: [] // Initialize with empty array
-        };
-    
-        // Expect identifier
-        if (current < tokens.length && tokens[current].type === 'identifier') {
-          if (!node.children) {
-            node.children = [];
-          }
-          node.children.push({ type: 'Identifier', value: tokens[current].value });
-          current++;
-        }
-    
-        // Expect equals sign
-        if (current < tokens.length && tokens[current].value === '=') {
-          current++;
-          // Parse the right-hand expression
-          if (!node.children) {
-            node.children = [];
-          }
-          node.children.push(parseExpression());
-        }
-    
-        return node;
-      }
-    
-      return parseExpression();
-    }
-
     function parseExpression(): ASTNode {
       let left = parsePrimary();
 
@@ -547,86 +424,82 @@ export class CompilerService {
     
     function analyze(node: ASTNode): void {
       switch (node.type) {
-        case 'Block':
-          scopes.push(new Map());
+        case 'Program':
+          // Add built-in functions to global scope
+          symbolTable.set('console.log', {
+            type: 'function',
+            parameters: ['...args'],
+            returnType: 'void'
+          });
           node.children?.forEach(analyze);
-          scopes.pop();
           break;
-    
+
         case 'FunctionDeclaration':
           if (node.value) {
-            // Check if function is already declared in current scope
-            if (scopes[0].has(node.value)) {
-              throw new CompilerError(`Function ${node.value} is already declared`, 'semantic');
-            }
+            const functionName = node.value;
+            const params = node.children?.filter(child => child.type === 'Parameter')
+              .map(param => param.value) || [];
             
-            const params: string[] = [];
-            scopes[0].set(node.value, { type: 'function', parameters: params });
-            
+            // Add function to current scope
+            const currentScope = scopes[scopes.length - 1];
+            currentScope.set(functionName, {
+              type: 'function',
+              parameters: params,
+              returnType: 'any'
+            });
+
             // Create new scope for function body
-            scopes.push(new Map());
+            const functionScope = new Map();
+            scopes.push(functionScope);
+            
+            // Add parameters to function scope
+            params.forEach(param => {
+              if (param) {
+                functionScope.set(param, {
+                  type: 'parameter',
+                  dataType: 'any'
+                });
+              }
+            });
+
+            // Analyze function body
             node.children?.forEach(child => {
-              if (child.type === 'Parameter') {
-                if (child.value) {
-                  if (scopes[scopes.length - 1].has(child.value)) {
-                    throw new CompilerError(`Duplicate parameter ${child.value}`, 'semantic');
-                  }
-                  params.push(child.value);
-                  scopes[scopes.length - 1].set(child.value, { type: 'parameter' });
-                }
-              } else {
+              if (child.type !== 'Parameter') {
                 analyze(child);
               }
             });
+
             scopes.pop();
           }
           break;
-    
-        case 'IfStatement':
-          // Analyze condition
-          if (node.children?.[0]) {
-            analyze(node.children[0]);
-          }
-          // Analyze then branch
-          if (node.children?.[1]) {
-            analyze(node.children[1]);
-          }
-          // Analyze else branch if exists
-          if (node.children?.[2]) {
-            analyze(node.children[2]);
-          }
-          break;
-    
+
         case 'VariableDeclaration':
-          if (Array.isArray(node.children) && node.children.length > 0) {
-            const identifier = node.children[0];
-            if (identifier.type === 'Identifier' && identifier.value) {
-              // Check in current scope only
-              if (scopes[scopes.length - 1].has(identifier.value)) {
-                throw new CompilerError(`Variable ${identifier.value} already declared in current scope`, 'semantic');
-              }
-              scopes[scopes.length - 1].set(identifier.value, { 
-                type: 'variable',
-                declarationType: node.value 
-              });
-              
-              if (node.children.length > 1) {
-                analyze(node.children[1]);
-              }
-            }
+          if (node.children?.[0]?.type === 'Identifier' && node.children[0].value) {
+            const varName = node.children[0].value;
+            const currentScope = scopes[scopes.length - 1];
+            
+            // Add variable to current scope with more information
+            currentScope.set(varName, {
+              type: 'variable',
+              declarationType: node.value || 'let',
+              dataType: node.children[1]?.type === 'NumberLiteral' ? 'number' :
+                        node.children[1]?.type === 'StringLiteral' ? 'string' : 'any',
+              initialized: node.children.length > 1
+            });
           }
           break;
-    
-        case 'BinaryExpression':
-          if (!Array.isArray(node.children) || node.children.length !== 2) {
-            throw new CompilerError('Invalid binary expression', 'semantic');
-          }
-          node.children.forEach(analyze);
+
+        case 'Block':
+          // Create new scope for blocks (if statements, loops, etc.)
+          const blockScope = new Map();
+          scopes.push(blockScope);
+          node.children?.forEach(analyze);
+          scopes.pop();
           break;
-    
+
         case 'Identifier':
+          // Verify variable exists in any scope
           if (node.value) {
-            // Look for variable in all scopes from inner to outer
             let found = false;
             for (let i = scopes.length - 1; i >= 0; i--) {
               if (scopes[i].has(node.value)) {
@@ -639,19 +512,16 @@ export class CompilerService {
             }
           }
           break;
+
+        default:
+          node.children?.forEach(analyze);
+          break;
       }
     }
-    
-    try {
-      analyze(ast);
-      return { ast, symbolTable: scopes[0] };
-    } catch (error) {
-      throw new CompilerError(
-        `Semantic analysis failed: ${(error as Error).message}`,
-        'semantic'
-      );
-    }
-  }
+
+    analyze(ast);
+    return { ast, symbolTable };
+}
 
   static generateIntermediateCode(ast: ASTNode): string[] {
     const threeAddressCode: string[] = [];
@@ -662,14 +532,78 @@ export class CompilerService {
       if (!node) return '';
 
       switch (node.type) {
-        case 'Block':
-          if (node.children) {
-            for (const child of node.children) {
+        case 'Program':
+          node.children?.forEach(child => generate(child));
+          return '';
+
+
+          case 'Block': {
+            node.children?.forEach(child => {
               generate(child);
+            });
+            return '';
+          }
+          
+          case 'ReturnStatement': {
+            if (node.children?.[0]) {
+              const returnValue = generate(node.children[0]);
+              threeAddressCode.push(`return ${returnValue}`);
             }
+            return '';
+          }
+          
+          case 'BinaryExpression': {
+            if (Array.isArray(node.children) && node.children.length === 2 && node.value) {
+              const left = generate(node.children[0]);
+              const right = generate(node.children[1]);
+              const temp = `t${tempCounter++}`;
+              threeAddressCode.push(`${temp} = ${left} ${node.value} ${right}`);
+              return temp;
+            }
+            return '';
+          }
+
+        
+        case 'FunctionDeclaration':
+          if (node.value) {
+            threeAddressCode.push(`function ${node.value}:`);
+            // Handle parameters
+            node.children?.forEach(child => {
+              if (child.type === 'Parameter') {
+                threeAddressCode.push(`param ${child.value}`);
+              } else {
+                generate(child);
+              }
+            });
           }
           return '';
 
+        case 'ReturnStatement':
+          if (node.children?.[0]) {
+            const returnValue = generate(node.children[0]);
+            threeAddressCode.push(`return ${returnValue}`);
+          }
+          return '';
+
+        case 'FunctionCall':
+          if (node.value) {
+            const args = node.children?.map(arg => generate(arg)) || [];
+            const temp = `t${tempCounter++}`;
+            args.forEach((arg, i) => {
+              threeAddressCode.push(`param ${arg}`);
+            });
+            threeAddressCode.push(`${temp} = call ${node.value}, ${args.length}`);
+            return temp;
+          }
+          return '';
+
+        case 'ExpressionStatement': {
+          if (node.children?.[0]) {
+            generate(node.children[0]);
+          }
+          return '';
+        }
+        
         case 'VariableDeclaration': {
           if (Array.isArray(node.children) && node.children.length > 0) {
             const identifier = node.children[0];
@@ -748,35 +682,74 @@ export class CompilerService {
 
   static optimize(intermediateCode: string[]): string[] {
     const optimized: string[] = [];
-    const constants = new Map<string, string>();
+    const variables = new Map<string, string>();
 
-    // Constant propagation and folding
     for (const line of intermediateCode) {
-      const [result, operation] = line.split(' = ');
-      
-      // Skip no-op assignments
-      if (result.trim() === operation?.trim()) {
+      // Keep function-related instructions unchanged
+      if (line.startsWith('function') || line.startsWith('param') || 
+          line.includes('call') || line.startsWith('return')) {
+        optimized.push(line);
         continue;
       }
 
-      // Try to evaluate constant expressions
-      if (operation) {
+      // Handle assignments and expressions
+      if (line.includes('=')) {
+        const [result, operation] = line.split(' = ');
+        const resultVar = result.trim();
+
+        // Handle simple assignments (x = 5 or x = y)
+        if (!operation.includes(' ')) {
+          const value = operation.trim();
+          if (!isNaN(Number(value))) {
+            variables.set(resultVar, value);
+            optimized.push(`${resultVar} = ${value}`);
+          } else {
+            // Check if we're assigning from a known variable
+            const knownValue = variables.get(value);
+            if (knownValue) {
+              variables.set(resultVar, knownValue);
+              optimized.push(`${resultVar} = ${knownValue}`);
+            } else {
+              optimized.push(line);
+            }
+          }
+          continue;
+        }
+
+        // Handle arithmetic operations (t0 = x + y)
         const parts = operation.split(' ');
         if (parts.length === 3) {
-          const [left, op, right] = parts;
-          const leftVal = constants.get(left) || left;
-          const rightVal = constants.get(right) || right;
+          const [left, op, right] = parts.map(p => p.trim());
+          const leftVal = variables.get(left) || left;
+          const rightVal = variables.get(right) || right;
 
-          // If both operands are numbers, compute the result
+          // Try constant folding
           if (!isNaN(Number(leftVal)) && !isNaN(Number(rightVal))) {
-            const value = eval(`${leftVal} ${op} ${rightVal}`);
-            constants.set(result, value.toString());
-            optimized.push(`${result} = ${value}`);
-            continue;
+            let value;
+            switch (op) {
+              case '+': value = Number(leftVal) + Number(rightVal); break;
+              case '-': value = Number(leftVal) - Number(rightVal); break;
+              case '*': value = Number(leftVal) * Number(rightVal); break;
+              case '/': value = Number(leftVal) / Number(rightVal); break;
+              default: value = null;
+            }
+            
+            if (value !== null) {
+              variables.set(resultVar, String(value));
+              optimized.push(`${resultVar} = ${value}`);
+              continue;
+            }
           }
-        } else if (!isNaN(Number(operation))) {
-          // Store constant assignments for propagation
-          constants.set(result, operation);
+
+          // If no constant folding possible, try to use known variable values
+          const newLeft = variables.get(left) || left;
+          const newRight = variables.get(right) || right;
+          if (newLeft !== left || newRight !== right) {
+            optimized.push(`${resultVar} = ${newLeft} ${op} ${newRight}`);
+          } else {
+            optimized.push(line);
+          }
+          continue;
         }
       }
 
@@ -784,8 +757,25 @@ export class CompilerService {
       optimized.push(line);
     }
 
-    return optimized;
-  }
+    // Remove duplicate assignments
+    const finalOptimized: string[] = [];
+    const seen = new Set<string>();
+
+    for (const line of optimized) {
+      if (line.includes('=')) {
+        const [result, operation] = line.split(' = ');
+        const key = `${result.trim()}=${operation.trim()}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          finalOptimized.push(line);
+        }
+      } else {
+        finalOptimized.push(line);
+      }
+    }
+
+    return finalOptimized;
+}
 
   static generateTargetCode(intermediateCode: string[]): string[] {
     const targetCode: string[] = [];
@@ -798,12 +788,30 @@ export class CompilerService {
         targetCode.push(`${currentFunction}:`);
         targetCode.push('  push rbp');
         targetCode.push('  mov rbp, rsp');
+        const value = line.slice(6);
+        targetCode.push(`  mov rdi, format_str`);
+        targetCode.push(`  mov rsi, ${value}`);
+        targetCode.push('  call printf');
+        continue;
+      }
+
+      if (line.includes('call')) {
+        // Handle function calls
+        const [result, callInfo] = line.split(' = call ');
+        const [func, argCount] = callInfo.split(', ');
+        targetCode.push(`  call ${func}`);
+        targetCode.push(`  mov ${result}, rax`);
+        // Clean up stack after call
+        if (parseInt(argCount) > 0) {
+          targetCode.push(`  add rsp, ${parseInt(argCount) * 8}`);
+        }
         continue;
       }
 
       if (line.startsWith('param ')) {
         // Parameter handling
         const param = line.slice(6);
+        targetCode.push(`  push ${param}`);
         targetCode.push(`  mov ${param}, [rbp + ${targetCode.length * 8}]`);
         continue;
       }
