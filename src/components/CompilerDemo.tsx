@@ -254,15 +254,8 @@ export const CompilerDemo = () => {
       {showPhases && (
         <div className="fixed inset-0 bg-black bg-opacity-75 z-50 overflow-hidden">
           <div className="h-screen w-screen flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-neutral-800 w-full max-w-7xl rounded-lg h-[95vh] sm:h-[90vh] flex flex-col">
-              <button
-                onClick={() => setShowPhases(false)}
-                className="text-gray-400 hover:text-white absolute top-2 right-2 sm:top-4 sm:right-4 p-2"
-              >
-                ✕
-              </button>
-
-              <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+            <div className="bg-neutral-800 w-full max-w-7xl rounded-lg h-[95vh] sm:h-[90vh] flex flex-col relative">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 pb-[200px]">
                 <div className="flex justify-between items-center sticky top-0 bg-neutral-800 py-2 z-10">
                   <button
                     onClick={handlePreviousPhase}
@@ -282,7 +275,6 @@ export const CompilerDemo = () => {
                     Next
                   </button>
                 </div>
-
                 <div className="bg-neutral-900 rounded-lg p-3 sm:p-6 overflow-x-auto">
                   <div className="min-w-[300px]">
                     <PhaseVisualizer
@@ -292,25 +284,37 @@ export const CompilerDemo = () => {
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 mt-6">
-                  {phases.map((phase, index) => (
+              </div>
+              
+              <div className="absolute bottom-0 left-0 right-0 bg-neutral-800 border-t border-neutral-700">
+                <div className="p-4">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 mb-4">
+                    {phases.map((phase, index) => (
+                      <button
+                        key={phase.id}
+                        onClick={() => {
+                          setCurrentPhase(index);
+                          setActivePhase(phase.id);
+                        }}
+                        className={`p-2 sm:p-4 rounded-lg text-center transition-colors ${
+                          currentPhase === index
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-neutral-700 hover:bg-neutral-600'
+                        }`}
+                      >
+                        <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{phase.icon}</div>
+                        <div className="text-xs text-white sm:text-sm">{phase.title}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-center border-t border-neutral-700 pt-4"> 
                     <button
-                      key={phase.id}
-                      onClick={() => {
-                        setCurrentPhase(index);
-                        setActivePhase(phase.id);
-                      }}
-                      className={`p-2 sm:p-4 rounded-lg text-center transition-colors ${
-                        currentPhase === index
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-neutral-700 hover:bg-neutral-600'
-                      }`}
+                      onClick={() => setShowPhases(false)}
+                      className="sm:w-auto px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
                     >
-                      <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{phase.icon}</div>
-                      <div className="text-xs text-white sm:text-sm">{phase.title}</div>
+                      Close
                     </button>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>

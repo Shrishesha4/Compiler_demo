@@ -19,7 +19,7 @@ export const CodeOutput = ({ output, error, onViewPhases }: CodeOutputProps) => 
           onClick={onViewPhases}
           className="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
         >
-          View Compilation Phases
+          View Phases
         </button>
       </div>
       <div className="bg-neutral-900 rounded-lg p-4 min-h-[100px] max-h-[200px] overflow-y-auto">

@@ -134,7 +134,6 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     }
   }, [sourceCode, phase, visualizeSyntaxAnalysis]);
 
-  // Add these new visualization methods
   const visualizeSemanticAnalysis = (code: string) => {
     try {
       const tokens = CompilerService.lexicalAnalysis(code);
@@ -236,15 +235,15 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     if (!visualizationRef.current) return;
 
     const tokenList = document.createElement('div');
-    tokenList.className = 'grid grid-cols-4 gap-4 p-4';
+    tokenList.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 p-4 max-h-[70vh] overflow-y-auto';
     
     tokens.forEach(token => {
       const tokenElement = document.createElement('div');
-      tokenElement.className = 'bg-neutral-600 p-3 rounded-2xl';
+      tokenElement.className = 'bg-neutral-600 p-3 rounded-2xl min-h-[90px] break-words flex flex-col justify-between';
       tokenElement.innerHTML = `
-        <div class="font-bold text-sm text-white">${token.type}</div>
-        <div class="text-white">${token.value}</div>
-        <div class="text-sm text-neutral-400">Line: ${token.line}, Col: ${token.column}</div>
+        <div class="font-bold text-base text-white mb-2">${token.type}</div>
+        <div class="text-white text-sm break-all mb-2">${token.value}</div>
+        <div class="text-xs text-neutral-400">Line: ${token.line}, Col: ${token.column}</div>
       `;
       tokenList.appendChild(tokenElement);
     });
@@ -276,7 +275,6 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
   const handleTryExample = () => {
     const example = phaseExplanations[phase as keyof typeof phaseExplanations]?.example;
     if (example) {
-      // Notify parent component to update code editor
       onChange(example);
     }
   };
