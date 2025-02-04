@@ -5,6 +5,16 @@ export interface Token {
   column: number;
 }
 
+export interface SymbolTableEntry {
+  type: 'function' | 'variable' | 'parameter';
+  parameters?: string[];
+  returnType?: string;
+  declarationType?: string;
+  dataType?: string;
+  initialized?: boolean;
+}
+
+
 export interface ASTNode {
   type: string;
   value?: string;
@@ -418,9 +428,9 @@ export class CompilerService {
     }
   }
 
-  static semanticAnalysis(ast: ASTNode): { ast: ASTNode; symbolTable: Map<string, any> } {
-    const symbolTable = new Map<string, any>();
-    const scopes: Map<string, any>[] = [symbolTable];
+  static semanticAnalysis(ast: ASTNode): { ast: ASTNode; symbolTable: Map<string, SymbolTableEntry> } {
+    const symbolTable = new Map<string, SymbolTableEntry>();
+    const scopes: Map<string, SymbolTableEntry>[] = [symbolTable];
     
     function analyze(node: ASTNode): void {
       switch (node.type) {
@@ -437,8 +447,10 @@ export class CompilerService {
         case 'FunctionDeclaration':
           if (node.value) {
             const functionName = node.value;
-            const params = node.children?.filter(child => child.type === 'Parameter')
-              .map(param => param.value) || [];
+            const params = node.children
+              ?.filter(child => child.type === 'Parameter')
+              .map(param => param.value)
+              .filter((value): value is string => value !== undefined) || [];
             
             // Add function to current scope
             const currentScope = scopes[scopes.length - 1];
@@ -449,17 +461,15 @@ export class CompilerService {
             });
 
             // Create new scope for function body
-            const functionScope = new Map();
+            const functionScope = new Map<string, SymbolTableEntry>();
             scopes.push(functionScope);
             
             // Add parameters to function scope
             params.forEach(param => {
-              if (param) {
-                functionScope.set(param, {
-                  type: 'parameter',
-                  dataType: 'any'
-                });
-              }
+              functionScope.set(param, {
+                type: 'parameter',
+                dataType: 'any'
+              });
             });
 
             // Analyze function body
@@ -589,7 +599,8 @@ export class CompilerService {
           if (node.value) {
             const args = node.children?.map(arg => generate(arg)) || [];
             const temp = `t${tempCounter++}`;
-            args.forEach((arg, i) => {
+            // Push parameters without unused index parameter
+            args.forEach(arg => {
               threeAddressCode.push(`param ${arg}`);
             });
             threeAddressCode.push(`${temp} = call ${node.value}, ${args.length}`);

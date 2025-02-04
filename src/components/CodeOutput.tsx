@@ -1,30 +1,28 @@
 'use client';
 
+interface ConsoleOutput {
+  type: 'log' | 'error';
+  content: string;
+}
+
 interface CodeOutputProps {
-  output: string[];
+  output: ConsoleOutput[];
   error?: string;
 }
 
 export const CodeOutput = ({ output, error }: CodeOutputProps) => {
   return (
-    <div className="rounded-lg overflow-hidden shadow-lg">
-      <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
-        <h3 className="text-sm font-medium">Output</h3>
-        <span className={`text-xs px-2 py-1 rounded ${error ? 'bg-red-500' : 'bg-green-500'}`}>
-          {error ? 'Error' : 'Success'}
-        </span>
-      </div>
-      <div className="bg-neutral-900 p-4 font-mono text-sm h-[200px] overflow-auto">
-        {error ? (
-          <div className="text-red-400">{error}</div>
-        ) : (
-          output.map((line, index) => (
-            <div key={index} className="text-gray-300">
-              {line}
-            </div>
-          ))
-        )}
-      </div>
+    <div className="bg-neutral-900 rounded-lg p-4 min-h-[100px] max-h-[200px] overflow-y-auto">
+      {output.map((item, index) => (
+        <div key={index} className={`mb-1 font-mono text-sm ${
+          item.type === 'error' ? 'text-red-400' : 'text-green-400'
+        }`}>
+          {item.content}
+        </div>
+      ))}
+      {error && (
+        <div className="text-red-400 font-mono text-sm">{error}</div>
+      )}
     </div>
   );
 };

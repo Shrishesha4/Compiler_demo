@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CompilerService, ASTNode } from '../services/compiler';
 import mermaid from 'mermaid';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -46,7 +46,6 @@ const phaseExplanations = {
 
 export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizerProps) => {
   useEffect(() => {
-    // Initialize mermaid with dark theme configuration
     mermaid.initialize({
       startOnLoad: true,
       theme: 'dark',
@@ -57,8 +56,34 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
 
   const visualizationRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const visualizeSyntaxAnalysis = useCallback(async () => {
+    try {
+      const tokens = CompilerService.lexicalAnalysis(sourceCode);
+      const ast = CompilerService.syntaxAnalysis(tokens);
+      
+      if (!visualizationRef.current) return;
+      
+      const graph = createMermaidAST(ast);
+      const element = document.createElement('div');
+      element.className = 'w-full h-full';
+      visualizationRef.current.appendChild(element);
+  
+      try {
+        const { svg } = await mermaid.render('ast-diagram', graph);
+        if (element) {
+          element.innerHTML = svg;
+        }
+      } catch (mermaidError) {
+        console.error('Mermaid rendering error:', mermaidError);
+        setError('Failed to render AST visualization');
+      }
+    } catch (error) {
+      console.error('Syntax analysis error:', error);
+      setError((error as Error).message);
+    }
+  }, [sourceCode]);
 
   useEffect(() => {
     console.log('PhaseVisualizer - phase changed:', phase, 'source:', sourceCode);
@@ -68,17 +93,16 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       setError('Please enter some code to analyze');
       return;
     }
-
+  
     if (!visualizationRef.current) {
       console.log('No visualization ref');
       return;
     }
-
+  
     visualizationRef.current.innerHTML = '';
     setError(null);
-    setDebugInfo(null);
     setIsLoading(true);
-
+  
     try {
       const trimmedCode = sourceCode.trim();
       switch (phase) {
@@ -87,7 +111,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
           visualizeLexicalAnalysis(trimmedCode);
           break;
         case 'syntax':
-          visualizeSyntaxAnalysis(sourceCode);
+          visualizeSyntaxAnalysis();
           break;
         case 'semantic':
           visualizeSemanticAnalysis(sourceCode);
@@ -108,7 +132,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     } finally {
       setIsLoading(false);
     }
-  }, [sourceCode, phase]);
+  }, [sourceCode, phase, visualizeSyntaxAnalysis]);
 
   // Add these new visualization methods
   const visualizeSemanticAnalysis = (code: string) => {
@@ -224,34 +248,6 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     visualizationRef.current.appendChild(tokenList);
   };
 
-  const visualizeSyntaxAnalysis = async (code: string) => {
-    try {
-      const tokens = CompilerService.lexicalAnalysis(code);
-      const ast = CompilerService.syntaxAnalysis(tokens);
-      
-      if (!visualizationRef.current) return;
-      
-      // Create AST visualization using mermaid
-      const graph = createMermaidAST(ast);
-      const element = document.createElement('div');
-      element.className = 'w-full h-full';
-      visualizationRef.current.appendChild(element);
-  
-      try {
-        const { svg } = await mermaid.render('ast-diagram', graph);
-        if (element) {
-          element.innerHTML = svg;
-        }
-      } catch (mermaidError) {
-        console.error('Mermaid rendering error:', mermaidError);
-        setError('Failed to render AST visualization');
-      }
-    } catch (error) {
-      console.error('Syntax analysis error:', error);
-      setError((error as Error).message);
-    }
-  };
-
   const createMermaidAST = (node: ASTNode): string => {
     let graph = 'graph TD\n';
     let counter = 0;
@@ -279,16 +275,6 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       // Notify parent component to update code editor
       onChange(example);
     }
-  };
-
-  const renderDebugInfo = () => {
-    if (!debugInfo) return null;
-    return (
-      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-        <h4 className="text-sm font-semibold mb-2">Debug Information</h4>
-        <pre className="text-xs overflow-auto">{JSON.stringify(debugInfo, null, 2)}</pre>
-      </div>
-    );
   };
 
   return (

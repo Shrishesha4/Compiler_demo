@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import MonacoEditor from '@monaco-editor/react';
 
 interface CodeEditorProps {

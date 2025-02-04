@@ -6,13 +6,20 @@ import { PhaseVisualizer } from './PhaseVisualizer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { CodeOutput } from './CodeOutput';
 
+interface ConsoleOutput {
+  type: 'log' | 'error';
+  content: string;
+}
+
 export const CompilerDemo = () => {
   const [sourceCode, setSourceCode] = useState('');
   const [activePhase, setActivePhase] = useState('lexical');
   const [isRunning, setIsRunning] = useState(false);
-  const [output, setOutput] = useState<string[]>([]);
+  const [output, setOutput] = useState<ConsoleOutput[]>([]);
   const [outputError, setOutputError] = useState<string>('');
-  const executeCode = async (code: string) => {
+
+  // Replace any with proper type
+  const executeCode = async (code: string): Promise<void> => {
     console.log('Executing code:', code);
     setOutput([]);
     setOutputError('');
@@ -20,11 +27,12 @@ export const CompilerDemo = () => {
     try {
       const logs: string[] = [];
       const safeConsole = {
-        log: (...args: any[]) => {
+        log: (...args: unknown[]) => {
           console.log('Code output:', ...args);
-          logs.push(args.map(arg => 
+          const logMessage = args.map(arg => 
             typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
-          ).join(' '));
+          ).join(' ');
+          logs.push(logMessage);
         }
       };
   
@@ -61,12 +69,12 @@ export const CompilerDemo = () => {
       `);
   
       await Promise.resolve(fn(context));
-      setOutput(logs);
+      setOutput(logs.map(log => ({ type: 'log', content: log })));
     } catch (error) {
       console.error('Code execution error:', error);
       setOutputError((error as Error).message);
     }
-};
+  };
   const [currentPhase, setCurrentPhase] = useState(0);
   const [showPhases, setShowPhases] = useState(false);
 
@@ -204,8 +212,10 @@ export const CompilerDemo = () => {
         <div className="bg-neutral-800 rounded-lg p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
           <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
-            Enter your code in the editor and click "Run Compiler" to start the compilation process.
-            You'll see each phase of compilation step by step.
+            <div className="text-sm">
+              &quot;Run Compiler&quot; to start the compilation process.
+              You&apos;ll see each phase step by step.
+            </div>
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {phases.map((phase) => (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ASTNode, CompilerService, Token } from '../services/compiler';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -15,7 +15,7 @@ interface CompilerStepVisualizerProps {
 interface StepData {
   tokens?: Token[];
   ast?: ASTNode;
-  symbolTable?: Map<string, any>;
+  symbolTable?: Map<string, unknown>;
   irCode?: string[];
   before?: string[];
   after?: string[];
@@ -28,7 +28,7 @@ export const CompilerStepVisualizer = ({ sourceCode, onClose, isRunning, onCompl
   const [stepData, setStepData] = useState<StepData | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const steps = [
+  const steps = useMemo(() => [
     { id: 'lexical', title: 'Lexical Analysis', icon: '🔍', 
       description: 'Breaking down the source code into tokens...' },
     { id: 'syntax', title: 'Syntax Analysis', icon: '🌳',
@@ -40,31 +40,10 @@ export const CompilerStepVisualizer = ({ sourceCode, onClose, isRunning, onCompl
     { id: 'optimization', title: 'Optimization', icon: '⚡',
       description: 'Optimizing the code...' },
     { id: 'codegen', title: 'Code Generation', icon: '💻',
-      description: 'Generating final code...' }
-  ];
+      description: 'Generating target code...' }
+  ], []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    if (isRunning) {
-      setCurrentStep(0);
-      setIsTransitioning(true);
-      processStep(0);
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [isRunning]);
-
-  const processStep = async (step: number) => {
-    console.log('Processing step:', step, 'with source code:', sourceCode);
-    
-    if (!sourceCode || !sourceCode.trim()) {
-      setStepData({ error: 'Please enter some code to analyze' });
-      return;
-    }
-  
+  const processStep = useCallback((step: number) => {
     try {
       const trimmedCode = sourceCode.trim();
       const tokens = CompilerService.lexicalAnalysis(trimmedCode);
@@ -109,7 +88,15 @@ export const CompilerStepVisualizer = ({ sourceCode, onClose, isRunning, onCompl
       console.error('Step processing error:', error);
       setStepData({ error: (error as Error).message });
     }
-  };
+  }, [sourceCode, steps]);
+
+  useEffect(() => {
+    if (isRunning) {
+      setCurrentStep(0);
+      setIsTransitioning(true);
+      processStep(0);
+    }
+  }, [isRunning, processStep]);
 
   useEffect(() => {
     if (isTransitioning && currentStep < steps.length) {
@@ -121,15 +108,15 @@ export const CompilerStepVisualizer = ({ sourceCode, onClose, isRunning, onCompl
           setIsTransitioning(false);
           onComplete();
         }
-      }, 2000); // 2 seconds per step
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isTransitioning]);
+  }, [currentStep, isTransitioning, processStep, steps.length, onComplete]);
 
   useEffect(() => {
     processStep(currentStep);
-  }, [currentStep, sourceCode]);
+  }, [currentStep, sourceCode, processStep]);
 
   const renderStepContent = () => {
     if (!stepData) return null;
