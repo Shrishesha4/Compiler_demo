@@ -5,6 +5,7 @@ import { CodeEditor } from './CodeEditor';
 import { PhaseVisualizer } from './PhaseVisualizer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { CodeOutput } from './CodeOutput';
+import { CompilerService } from '@/services/compiler';
 
 interface ConsoleOutput {
   type: 'log' | 'error';
@@ -25,6 +26,15 @@ export const CompilerDemo = () => {
     setOutputError('');
   
     try {
+      // First, run the compiler phases silently (without adding to output)
+      const tokens = CompilerService.lexicalAnalysis(code);
+      const ast = CompilerService.syntaxAnalysis(tokens);
+      const { symbolTable } = CompilerService.semanticAnalysis(ast);
+      const irCode = CompilerService.generateIntermediateCode(ast);
+      const optimizedCode = CompilerService.optimize(irCode);
+      const targetCode = CompilerService.generateTargetCode(optimizedCode);
+  
+      // Then execute the code with console.log support
       const logs: string[] = [];
       const safeConsole = {
         log: (...args: unknown[]) => {
@@ -48,13 +58,42 @@ export const CompilerDemo = () => {
       const wrappedCode = `
         (function() {
           let __functions = {};
-          ${code}
-          // Execute the last line if it's a function call
-          const lines = \`${code}\`.split('\\n');
-          const lastLine = lines[lines.length - 1].trim();
-          if (lastLine.includes('(')) {
-            eval(lastLine);
+          let __result;
+          let __outputs = [];
+  
+          // Function to track results
+          function __trackResult(value) {
+            if (value !== undefined) {
+              __outputs.push(value);
+            }
           }
+  
+          // Execute the code
+          ${code}
+  
+          // Process each line for results
+          const lines = \`${code}\`.split('\\n');
+          for (let line of lines) {
+            line = line.trim();
+            if (line) {
+              try {
+                // Handle function calls and expressions
+                if (line.includes('(') && !line.startsWith('function')) {
+                  __result = eval(line);
+                  __trackResult(__result);
+                }
+                // Handle variable assignments
+                else if (line.includes('=') && !line.includes('function')) {
+                  const varName = line.split('=')[0].trim();
+                  __result = eval(varName);
+                  __trackResult(__result);
+                }
+              } catch (e) {}
+            }
+          }
+  
+          // Output all results
+          __outputs.forEach(output => console.log(output));
         })();
       `;
   
@@ -69,7 +108,32 @@ export const CompilerDemo = () => {
       `);
   
       await Promise.resolve(fn(context));
-      setOutput(logs.map(log => ({ type: 'log', content: log })));
+  
+      // After execution, show the program output first
+      if (logs.length > 0) {
+        setOutput(prev => [...prev, ...logs.map(log => ({ 
+          type: 'log' as const, 
+          content: `Output: ${log}` 
+        }))]);
+      }
+  
+      // Then show the compilation details
+      setOutput(prev => [
+        ...prev,
+        { type: 'log' as const, content: '\nCompilation Details:' },
+        { type: 'log' as const, content: '-------------------' },
+        { type: 'log' as const, content: 'Lexical Analysis ✓' },
+        { type: 'log' as const, content: 'Syntax Analysis ✓' },
+        { type: 'log' as const, content: ' Semantic Analysis ✓' },
+        { type: 'log' as const, content: ' Intermediate Code ✓' },
+        { type: 'log' as const, content: ' Optimized Code ✓' },
+        { type: 'log' as const, content: ' Target Code ✓' },
+        // { type: 'log' as const, content: `Semantic Analysis ✓\nSymbol Table:\n${JSON.stringify([...symbolTable.entries()], null, 2)}` },
+        // { type: 'log' as const, content: `Intermediate Code:\n${irCode.join('\n')}` },
+        // { type: 'log' as const, content: `Optimized Code:\n${optimizedCode.join('\n')}` },
+        // { type: 'log' as const, content: `Target Code:\n${targetCode.join('\n')}` }
+      ]);
+  
     } catch (error) {
       console.error('Code execution error:', error);
       setOutputError((error as Error).message);
@@ -157,14 +221,18 @@ export const CompilerDemo = () => {
     
     try {
       await executeCode(sourceCode);
-      setShowPhases(true);
-      setCurrentPhase(0);
-      setActivePhase(phases[0].id);
+      // Remove setShowPhases(true) from here
     } catch (error) {
       setOutputError((error as Error).message);
     } finally {
       setIsRunning(false);
     }
+  };
+
+  const handleViewPhases = () => {
+    setShowPhases(true);
+    setCurrentPhase(0);
+    setActivePhase(phases[0].id);
   };
 
   const handleNextPhase = () => {
@@ -205,18 +273,23 @@ export const CompilerDemo = () => {
             value={sourceCode}
             onChange={handleSourceCodeChange}
           />
-          <CodeOutput output={output} error={outputError} />
+          <CodeOutput 
+            output={output} 
+            error={outputError}
+            onViewPhases={handleViewPhases}
+          />
           {isRunning && <LoadingSpinner />}
         </div>
         
         <div className="bg-neutral-800 rounded-lg p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
-          <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
+          {/* Replace <p> with <div> since we're nesting another div inside */}
+          <div className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
             <div className="text-sm">
               &quot;Run Compiler&quot; to start the compilation process.
               You&apos;ll see each phase step by step.
             </div>
-          </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {phases.map((phase) => (
               <div key={phase.id} className="bg-neutral-700 p-3 sm:p-4 rounded-lg">
