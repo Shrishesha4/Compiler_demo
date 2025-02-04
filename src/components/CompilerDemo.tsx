@@ -27,12 +27,12 @@ export const CompilerDemo = () => {
   
     try {
       // First, run the compiler phases silently (without adding to output)
-      const tokens = CompilerService.lexicalAnalysis(code);
-      const ast = CompilerService.syntaxAnalysis(tokens);
-      const { symbolTable } = CompilerService.semanticAnalysis(ast);
-      const irCode = CompilerService.generateIntermediateCode(ast);
-      const optimizedCode = CompilerService.optimize(irCode);
-      const targetCode = CompilerService.generateTargetCode(optimizedCode);
+      // const tokens = CompilerService.lexicalAnalysis(code);
+      // const ast = CompilerService.syntaxAnalysis(tokens);
+      // const { symbolTable } = CompilerService.semanticAnalysis(ast);
+      // const irCode = CompilerService.generateIntermediateCode(ast);
+      // const optimizedCode = CompilerService.optimize(irCode);
+      // const targetCode = CompilerService.generateTargetCode(optimizedCode);
   
       // Then execute the code with console.log support
       const logs: string[] = [];
