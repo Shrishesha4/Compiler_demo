@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CompilerService, Token, ASTNode } from '../services/compiler';
-import * as d3 from 'd3';
+import { CompilerService, ASTNode } from '../services/compiler';
 import mermaid from 'mermaid';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface PhaseVisualizerProps {
   sourceCode: string;
   phase: string;
-  onChange: (code: string) => void;  // Add onChange prop
+  onChange: (code: string) => void;
 }
 
 const phaseExplanations = {
@@ -45,21 +45,46 @@ const phaseExplanations = {
 };
 
 export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizerProps) => {
+  useEffect(() => {
+    // Initialize mermaid with dark theme configuration
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'monospace'
+    });
+  }, []);
+
   const visualizationRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!sourceCode || !visualizationRef.current) return;
+    console.log('PhaseVisualizer - phase changed:', phase, 'source:', sourceCode);
+    
+    if (!sourceCode || !sourceCode.trim()) {
+      console.log('No source code provided');
+      setError('Please enter some code to analyze');
+      return;
+    }
+
+    if (!visualizationRef.current) {
+      console.log('No visualization ref');
+      return;
+    }
 
     visualizationRef.current.innerHTML = '';
     setError(null);
     setDebugInfo(null);
+    setIsLoading(true);
 
     try {
+      const trimmedCode = sourceCode.trim();
       switch (phase) {
         case 'lexical':
-          visualizeLexicalAnalysis(sourceCode);
+          console.log('Visualizing lexical analysis');
+          visualizeLexicalAnalysis(trimmedCode);
           break;
         case 'syntax':
           visualizeSyntaxAnalysis(sourceCode);
@@ -78,7 +103,10 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
           break;
       }
     } catch (error) {
+      console.error('Visualization error:', error);
       setError((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   }, [sourceCode, phase]);
 
@@ -94,7 +122,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const element = document.createElement('div');
       element.className = 'space-y-4';
       element.innerHTML = `
-        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
+        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
           <h4 class="font-bold mb-2">Symbol Table</h4>
           <pre class="text-sm">${JSON.stringify([...symbolTable.entries()], null, 2)}</pre>
         </div>
@@ -114,7 +142,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const irCode = CompilerService.generateIntermediateCode(ast);
       
       const element = document.createElement('div');
-      element.className = 'bg-gray-100 dark:bg-gray-700 p-4 rounded-lg';
+      element.className = 'bg-gray-900 dark:bg-gray-700 p-4 rounded-lg';
       element.innerHTML = `
         <h4 class="font-bold mb-2">Three-Address Code</h4>
         <pre class="text-sm">${irCode.join('\n')}</pre>
@@ -137,11 +165,11 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const element = document.createElement('div');
       element.className = 'space-y-4';
       element.innerHTML = `
-        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
+        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
           <h4 class="font-bold mb-2">Before Optimization</h4>
           <pre class="text-sm">${irCode.join('\n')}</pre>
         </div>
-        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
+        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
           <h4 class="font-bold mb-2">After Optimization</h4>
           <pre class="text-sm">${optimizedCode.join('\n')}</pre>
         </div>
@@ -163,7 +191,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const targetCode = CompilerService.generateTargetCode(optimizedCode);
       
       const element = document.createElement('div');
-      element.className = 'bg-gray-100 dark:bg-gray-700 p-4 rounded-lg';
+      element.className = 'bg-gray-900 dark:bg-gray-700 p-4 rounded-lg';
       element.innerHTML = `
         <h4 class="font-bold mb-2">Assembly-like Code</h4>
         <pre class="text-sm">${targetCode.join('\n')}</pre>
@@ -184,7 +212,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     
     tokens.forEach(token => {
       const tokenElement = document.createElement('div');
-      tokenElement.className = 'bg-gray-100 dark:bg-gray-700 p-3 rounded-lg';
+      tokenElement.className = 'bg-gray-900 dark:bg-gray-700 p-3 rounded-lg';
       tokenElement.innerHTML = `
         <div class="font-bold text-sm">${token.type}</div>
         <div class="text-gray-600 dark:text-gray-300">${token.value}</div>
@@ -197,18 +225,30 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
   };
 
   const visualizeSyntaxAnalysis = async (code: string) => {
-    const tokens = CompilerService.lexicalAnalysis(code);
-    const ast = CompilerService.syntaxAnalysis(tokens);
-    
-    // Create AST visualization using mermaid
-    const graph = createMermaidAST(ast);
-    const element = document.createElement('div');
-    element.className = 'w-full h-full';
-    visualizationRef.current?.appendChild(element);
+    try {
+      const tokens = CompilerService.lexicalAnalysis(code);
+      const ast = CompilerService.syntaxAnalysis(tokens);
+      
+      if (!visualizationRef.current) return;
+      
+      // Create AST visualization using mermaid
+      const graph = createMermaidAST(ast);
+      const element = document.createElement('div');
+      element.className = 'w-full h-full';
+      visualizationRef.current.appendChild(element);
   
-    const { svg } = await mermaid.render('ast-diagram', graph);
-    if (element) {
-      element.innerHTML = svg;
+      try {
+        const { svg } = await mermaid.render('ast-diagram', graph);
+        if (element) {
+          element.innerHTML = svg;
+        }
+      } catch (mermaidError) {
+        console.error('Mermaid rendering error:', mermaidError);
+        setError('Failed to render AST visualization');
+      }
+    } catch (error) {
+      console.error('Syntax analysis error:', error);
+      setError((error as Error).message);
     }
   };
 
@@ -252,38 +292,31 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            {phaseExplanations[phase as keyof typeof phaseExplanations]?.title || phase}
-          </h3>
-          <button
-            onClick={handleTryExample}
-            className="px-3 py-1 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
-          >
-            Try Example
-          </button>
+    <div className="relative">
+      {isLoading && <LoadingSpinner />}
+      <div ref={visualizationRef} className="space-y-4">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+              {phaseExplanations[phase as keyof typeof phaseExplanations]?.title || phase}
+            </h3>
+            <button
+              onClick={handleTryExample}
+              className="px-3 py-1 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+            >
+              Try Example
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+            {phaseExplanations[phase as keyof typeof phaseExplanations]?.description}
+          </p>
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-          {phaseExplanations[phase as keyof typeof phaseExplanations]?.description}
-        </p>
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
       </div>
-      
-      <div ref={visualizationRef} className="h-[400px] overflow-auto">
-        {!sourceCode && (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            Enter some code or try an example to see the visualization
-          </div>
-        )}
-      </div>
-      
-      {renderDebugInfo()}
     </div>
   );
 };

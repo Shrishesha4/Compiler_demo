@@ -28,7 +28,7 @@ export const CompilerPhases = ({ activePhase, onPhaseChange }: CompilerPhasesPro
             className={`w-full text-left px-4 py-3 rounded-md transition-colors ${
               activePhase === phase.id
                 ? 'bg-blue-500 text-white'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                : 'hover:bg-gray-900 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
             }`}
           >
             <span className="mr-2">{phase.icon}</span>
