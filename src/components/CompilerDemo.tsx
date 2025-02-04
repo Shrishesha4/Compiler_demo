@@ -227,8 +227,8 @@ export const CompilerDemo = () => {
           {isRunning && <LoadingSpinner />}
         </div>
         
-        <div className="bg-neutral-800 rounded-lg p-4 sm:p-6">
-          <h2 className="text-xl text-white  sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
+        <div className="bg-neutral-800 rounded-lg p-4 sm:p-6 sm:pt-0">
+          <h2 className="text-xl text-white sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
           <div className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-white">
             <div className="text-sm">
               &quot;Run Compiler&quot; to start the compilation process.
