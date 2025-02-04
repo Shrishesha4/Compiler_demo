@@ -5,7 +5,6 @@ import { CodeEditor } from './CodeEditor';
 import { PhaseVisualizer } from './PhaseVisualizer';
 import { LoadingSpinner } from './LoadingSpinner';
 import { CodeOutput } from './CodeOutput';
-import { CompilerService } from '@/services/compiler';
 
 interface ConsoleOutput {
   type: 'log' | 'error';
