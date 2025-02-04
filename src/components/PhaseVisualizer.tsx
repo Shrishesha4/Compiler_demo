@@ -146,9 +146,10 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const element = document.createElement('div');
       element.className = 'space-y-4';
       element.innerHTML = `
-        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
-          <h4 class="font-bold mb-2">Symbol Table</h4>
-          <pre class="text-sm">${JSON.stringify([...symbolTable.entries()], null, 2)}</pre>
+        <div class="bg-neutral-900 p-4 rounded-lg">
+          <h4 class="font-bold mb-2 text-white text-3xl">Symbol Table</h4>
+          <hr class="border-neutral-600 mt-3 mb-3"/>
+          <pre class="text-sm text-white">${JSON.stringify([...symbolTable.entries()], null, 2)}</pre>
         </div>
       `;
       visualizationRef.current?.appendChild(element);
@@ -166,10 +167,11 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const irCode = CompilerService.generateIntermediateCode(ast);
       
       const element = document.createElement('div');
-      element.className = 'bg-gray-900 dark:bg-gray-700 p-4 rounded-lg';
+      element.className = 'bg-neutral-900 p-4 rounded-lg';
       element.innerHTML = `
-        <h4 class="font-bold mb-2">Three-Address Code</h4>
-        <pre class="text-sm">${irCode.join('\n')}</pre>
+        <h4 class="font-bold mb-2 text-white text-3xl">Three-Address Code</h4>
+        <hr class="border-neutral-600 mt-3 mb-3"/>
+        <pre class="text-sm text-white">${irCode.join('\n')}</pre>
       `;
       visualizationRef.current?.appendChild(element);
     } catch (error) {
@@ -189,13 +191,14 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const element = document.createElement('div');
       element.className = 'space-y-4';
       element.innerHTML = `
-        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
-          <h4 class="font-bold mb-2">Before Optimization</h4>
-          <pre class="text-sm">${irCode.join('\n')}</pre>
+        <div class="bg-neutral-900 p-4 rounded-lg">
+          <h4 class="font-bold mb-2 text-3xl text-white">Before Optimization</h4>
+          <pre class="text-sm text-white">${irCode.join('\n')}</pre>
         </div>
-        <div class="bg-gray-900 dark:bg-gray-700 p-4 rounded-lg">
-          <h4 class="font-bold mb-2">After Optimization</h4>
-          <pre class="text-sm">${optimizedCode.join('\n')}</pre>
+        <hr class="border-neutral-600"/>
+        <div class="bg-neutral-900 p-4 rounded-lg">
+          <h4 class="font-bold mb-2 text-3xl text-white">After Optimization</h4>
+          <pre class="text-sm text-white">${optimizedCode.join('\n')}</pre>
         </div>
       `;
       visualizationRef.current?.appendChild(element);
@@ -215,10 +218,11 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       const targetCode = CompilerService.generateTargetCode(optimizedCode);
       
       const element = document.createElement('div');
-      element.className = 'bg-gray-900 dark:bg-gray-700 p-4 rounded-lg';
+      element.className = 'bg-neutral-900 p-4 rounded-lg';
       element.innerHTML = `
-        <h4 class="font-bold mb-2">Assembly-like Code</h4>
-        <pre class="text-sm">${targetCode.join('\n')}</pre>
+        <h4 class="font-bold mb-2 text-3xl text-white">Assembly-like Code</h4>
+        <hr class="border-neutral-600 mt-3 mb-3"/>
+        <pre class="text-sm text-white">${targetCode.join('\n')}</pre>
       `;
       visualizationRef.current?.appendChild(element);
     } catch (error) {
@@ -236,11 +240,11 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
     
     tokens.forEach(token => {
       const tokenElement = document.createElement('div');
-      tokenElement.className = 'bg-gray-900 dark:bg-gray-700 p-3 rounded-lg';
+      tokenElement.className = 'bg-neutral-600 p-3 rounded-2xl';
       tokenElement.innerHTML = `
-        <div class="font-bold text-sm">${token.type}</div>
-        <div class="text-gray-600 dark:text-gray-300">${token.value}</div>
-        <div class="text-xs text-gray-500">Line: ${token.line}, Col: ${token.column}</div>
+        <div class="font-bold text-sm text-white">${token.type}</div>
+        <div class="text-white">${token.value}</div>
+        <div class="text-sm text-neutral-400">Line: ${token.line}, Col: ${token.column}</div>
       `;
       tokenList.appendChild(tokenElement);
     });
@@ -283,7 +287,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
       <div ref={visualizationRef} className="space-y-4">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+            <h3 className="text-lg font-semibold text-white">
               {phaseExplanations[phase as keyof typeof phaseExplanations]?.title || phase}
             </h3>
             <button
@@ -293,7 +297,7 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
               Try Example
             </button>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+          <p className="text-sm text-neutral-400 mb-4">
             {phaseExplanations[phase as keyof typeof phaseExplanations]?.description}
           </p>
           {error && (

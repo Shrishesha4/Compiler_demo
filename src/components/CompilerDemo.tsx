@@ -18,7 +18,6 @@ export const CompilerDemo = () => {
   const [output, setOutput] = useState<ConsoleOutput[]>([]);
   const [outputError, setOutputError] = useState<string>('');
 
-  // Replace any with proper type
   const executeCode = async (code: string): Promise<void> => {
     setOutput([]);
     setOutputError('');
@@ -229,9 +228,8 @@ export const CompilerDemo = () => {
         </div>
         
         <div className="bg-neutral-800 rounded-lg p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
-          {/* Replace <p> with <div> since we're nesting another div inside */}
-          <div className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
+          <h2 className="text-xl text-white  sm:text-2xl font-bold mb-4">Compiler Visualization Dashboard</h2>
+          <div className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-white">
             <div className="text-sm">
               &quot;Run Compiler&quot; to start the compilation process.
               You&apos;ll see each phase step by step.
@@ -240,7 +238,7 @@ export const CompilerDemo = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {phases.map((phase) => (
               <div key={phase.id} className="bg-neutral-700 p-3 sm:p-4 rounded-lg">
-                <h3 className="text-base sm:text-lg font-semibold mb-2">
+                <h3 className="text-white sm:text-lg font-semibold mb-2">
                   {phase.icon} {phase.title}
                 </h3>
                 <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
@@ -269,17 +267,17 @@ export const CompilerDemo = () => {
                   <button
                     onClick={handlePreviousPhase}
                     disabled={currentPhase === 0}
-                    className="px-2 sm:px-4 py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg disabled:bg-gray-400"
+                    className="px-2 sm:px-4 py-2 text-sm sm:text-white bg-blue-500 text-white rounded-lg disabled:bg-gray-400"
                   >
                     Previous
                   </button>
-                  <span className="text-base sm:text-xl font-semibold px-2">
+                  <span className="text-white sm:text-3xl font-semibold px-2">
                     {phases[currentPhase].icon} {phases[currentPhase].title}
                   </span>
                   <button
                     onClick={handleNextPhase}
                     disabled={currentPhase === phases.length - 1}
-                    className="px-2 sm:px-4 py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg disabled:bg-gray-400"
+                    className="px-2 sm:px-4 py-2 text-sm sm:text-white bg-blue-500 text-white rounded-lg disabled:bg-gray-400"
                   >
                     Next
                   </button>
@@ -310,7 +308,7 @@ export const CompilerDemo = () => {
                       }`}
                     >
                       <div className="text-xl sm:text-2xl mb-1 sm:mb-2">{phase.icon}</div>
-                      <div className="text-xs sm:text-sm">{phase.title}</div>
+                      <div className="text-xs text-white sm:text-sm">{phase.title}</div>
                     </button>
                   ))}
                 </div>

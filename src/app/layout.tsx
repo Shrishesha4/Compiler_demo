@@ -24,11 +24,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+        <meta charSet="utf-8" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <hr className="border-neutral-600"/>
+        <footer className="text-center py-4 text-sm bg-neutral-800 text-gray-600">
+          <p>&copy; {new Date().getFullYear()} Shrishesha. All rights reserved.</p>
+        </footer>
       </body>
+
+      
     </html>
   );
 }
