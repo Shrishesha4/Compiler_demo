@@ -280,26 +280,28 @@ export const PhaseVisualizer = ({ sourceCode, phase, onChange }: PhaseVisualizer
   };
 
   return (
-    <div className="relative">
+    <div className="relative bg-neutral-900 rounded-xl p-6 shadow-lg">
       {isLoading && <LoadingSpinner />}
-      <div ref={visualizationRef} className="space-y-4">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              {phaseExplanations[phase as keyof typeof phaseExplanations]?.title || phase}
-            </h3>
+      <div ref={visualizationRef} className="space-y-6">
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6 border-b border-neutral-700 pb-4">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {phaseExplanations[phase as keyof typeof phaseExplanations]?.title || phase}
+              </h3>
+              <p className="text-sm text-neutral-400">
+                {phaseExplanations[phase as keyof typeof phaseExplanations]?.description}
+              </p>
+            </div>
             <button
               onClick={handleTryExample}
-              className="px-3 py-1 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 shadow-sm"
             >
               Try Example
             </button>
           </div>
-          <p className="text-sm text-neutral-400 mb-4">
-            {phaseExplanations[phase as keyof typeof phaseExplanations]?.description}
-          </p>
           {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mb-6 p-4 bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg">
               {error}
             </div>
           )}
