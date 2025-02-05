@@ -1296,15 +1296,22 @@ export class CompilerService {
           node.children?.forEach(analyze);
           break;
 
-        case "VariableDeclaration":
-          const varName = node.children?.[0].value!;
-          symbolTable.set(varName, {
-            type: "variable",
-            declarationType: node.value,
-            initialized: true,
-            dataType: "object"
-          });
-          break;
+          case "VariableDeclaration":
+            // Fix the non-null assertion on optional chain
+            const varNameFromChildren = node.children?.[0]?.value;
+            if (!varNameFromChildren) {
+              throw new CompilerError(
+                "Variable declaration missing identifier",
+                "semantic"
+              );
+            }
+            symbolTable.set(varNameFromChildren, {
+              type: "variable",
+              declarationType: node.value,
+              initialized: true,
+              dataType: "object"
+            });
+            break;
 
         case "Program":
           // Add built-in functions to global scope
@@ -1827,9 +1834,39 @@ export class CompilerService {
   
       if (line.includes("this.value")) {
         if (line.includes("=")) {
-          const [_, value] = line.split(" = ");
-          targetCode.push(`  mov eax, ${value}`);
+          // Split the line and extract the value after the equals sign
+          const [, expression] = line.split(" = ");
+          // Handle binary expressions
+          if (expression.includes(" ")) {
+            const [, op, right] = expression.split(" ");
+            targetCode.push(`  mov eax, [${currentClass}_value]`);
+            
+            switch(op) {
+              case "+":
+                targetCode.push(`  add eax, ${right}`);
+                break;
+              case "-":
+                targetCode.push(`  sub eax, ${right}`);
+                break;
+              case "*":
+                targetCode.push(`  imul eax, ${right}`);
+                break;
+              case "/":
+                targetCode.push(`  mov ebx, ${right}`);
+                targetCode.push(`  cdq`);
+                targetCode.push(`  idiv ebx`);
+                break;
+            }
+          } else {
+            // Simple assignment
+            targetCode.push(`  mov eax, ${expression}`);
+          }
+          
+          // Store the result back in class value
           targetCode.push(`  mov [${currentClass}_value], eax`);
+        } else {
+          // Load value if it's just a reference
+          targetCode.push(`  mov eax, [${currentClass}_value]`);
         }
       }
   
