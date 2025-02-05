@@ -28,10 +28,10 @@ export const DemoGuide = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-10 right-0 w-[32rem] bg-neutral-800 rounded-lg p-6 space-y-4 shadow-xl z-50">
+        <div className="absolute top-10 right-0 w-[32rem] bg-neutral-500 rounded-lg p-6 space-y-4 shadow-xl z-50">
           <section>
-            <h3 className="text-xl font-semibold mb-2">How to Use the Compiler</h3>
-            <ol className="list-decimal list-inside space-y-2 text-gray-300">
+            <h3 className="text-xl font-semibold mb-2 text-black">How to Use the Compiler</h3>
+            <ol className="list-decimal list-inside space-y-2 text-black">
               <li>Enter your JavaScript code in the editor</li>
               <li>Click &quot;Run Compiler&quot; to execute and analyze the code</li>
               <li>View the compilation process and output in real-time</li>
@@ -40,8 +40,8 @@ export const DemoGuide = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-semibold mb-2">Console Output Guide</h3>
-            <ul className="list-disc list-inside space-y-2 text-gray-300">
+            <h3 className="text-xl font-semibold mb-2 text-black">Console Output Guide</h3>
+            <ul className="list-disc list-inside space-y-2 text-black">
               <li>Regular output appears in white text</li>
               <li>Errors are displayed in red text</li>
               <li>The console supports standard JavaScript console.log() calls</li>
@@ -50,7 +50,7 @@ export const DemoGuide = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-semibold mb-2">Example Usage</h3>
+            <h3 className="text-xl font-semibold mb-2 text-black">Example Usage</h3>
             <div className="bg-neutral-900 p-4 rounded-md w-full">
               <pre className="text-gray-300 overflow-x-auto whitespace-pre-wrap break-words max-w-full">
 {`// Basic function example
@@ -69,8 +69,8 @@ console.log(obj);  // Output: { &quot;name&quot;: &quot;test&quot; }`}
           </section>
 
           <section>
-            <h3 className="text-xl font-semibold mb-2">Compilation Phases</h3>
-            <ul className="list-disc list-inside space-y-2 text-gray-300">
+            <h3 className="text-xl font-semibold mb-2 text-black">Compilation Phases</h3>
+            <ul className="list-disc list-inside space-y-2 text-black">
               <li>🔍 Lexical Analysis: Breaks code into tokens</li>
               <li>🌳 Syntax Analysis: Creates abstract syntax tree</li>
               <li>✨ Semantic Analysis: Checks types and scopes</li>

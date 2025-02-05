@@ -2,37 +2,42 @@ export const codeExamples = {
   basic: [
     {
       title: 'Simple Variable Declaration',
-      code: 'let x = 42;',
+      code: 'let x = 42;\nx',
       description: 'Shows basic variable declaration and assignment',
     },
     {
       title: 'Function Declaration',
-      code: 'function add(a, b) {\n  return a + b;\n}',
+      code: 'function add(a, b) {\n  return a + b;\n}\nlet x = add(5, 3);\nx',
       description: 'Demonstrates function declaration with parameters',
     },
     {
       title: 'Conditional Statement',
-      code: 'if (x > 0) {\n  console.log("positive");\n} else {\n  console.log("negative");\n}',
+      code: 'let x = 10;\nif (x > 0) {\nx > 0;\n} else {\nx > 0;\n}',
       description: 'Shows control flow with if-else statement',
     },
   ],
   intermediate: [
     {
-      title: 'Loop with Array',
-      code: 'const arr = [1, 2, 3];\nfor (let i = 0; i < arr.length; i++) {\n  console.log(arr[i]);\n}',
-      description: 'Demonstrates array iteration',
-    },
-    {
-      title: 'Object Methods',
-      code: 'const obj = {\n  name: "John",\n  greet() {\n    return `Hello, ${this.name}`;\n  }\n};',
-      description: 'Shows object method definition',
+      title: 'Array Methods',
+      code: 'const numbers = [1, 2, 3, 4, 5];\nconst doubled = numbers.map(n => n * 2);\ndoubled',
+      description: 'Demonstrates array map method',
     },
   ],
   advanced: [
     {
       title: 'Class Definition',
-      code: 'class Calculator {\n  constructor() {\n    this.value = 0;\n  }\n  add(x) {\n    this.value += x;\n  }\n}',
+      code: 'class Calculator {\n  constructor() {\n    this.value = 0;\n  }\n  add(x) {\n    this.value += x;\n    return this.value;\n  }\n}\nconst calc = new Calculator();\nconsole.log(calc.add(5));',
       description: 'Demonstrates class definition with methods',
+    },
+    {
+      title: 'Async/Await',
+      code: 'async function fetchData() {\n  return new Promise(resolve => {\n    setTimeout(() => resolve("Data"), 1000);\n  });\n}\n\nconsole.log("Fetching...");\nfetchData().then(data => console.log(data));',
+      description: 'Shows async/await pattern',
+    },
+    {
+      title: 'Recursion',
+      code: 'function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}\n\nconsole.log(factorial(5));',
+      description: 'Demonstrates recursive function',
     },
   ],
 };
