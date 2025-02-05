@@ -288,7 +288,7 @@ export const CompilerDemo = () => {
               
               <div className="absolute bottom-0 left-0 right-0 bg-neutral-800 border-t border-neutral-700">
                 <div className="p-4">
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 mb-4">
+                  {/* <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4 mb-4">
                     {phases.map((phase, index) => (
                       <button
                         key={phase.id}
@@ -306,7 +306,7 @@ export const CompilerDemo = () => {
                         <div className="text-xs text-white sm:text-sm">{phase.title}</div>
                       </button>
                     ))}
-                  </div>
+                  </div> */}
                   <div className="flex justify-center border-t border-neutral-700 pt-4"> 
                     <button
                       onClick={() => setShowPhases(false)}
