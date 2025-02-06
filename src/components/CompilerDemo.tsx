@@ -202,7 +202,7 @@ export const CompilerDemo = () => {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex justify-between items-center gap-4 mt-4">
         <div className="flex items-center gap-4">
           <ExampleSelector onSelect={handleSourceCodeChange} />
           <button
