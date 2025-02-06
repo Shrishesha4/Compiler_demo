@@ -10,12 +10,6 @@ export default function DemoPage() {
         <div className="absolute top-4 right-4">
           <DemoGuide />
         </div>
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Visual Compiler Design Toolkit
-          </h1>
-        </header>
-        
         <CompilerDemo />
       </main>
     </div>
