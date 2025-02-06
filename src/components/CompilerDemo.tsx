@@ -212,7 +212,7 @@ export const CompilerDemo = () => {
               isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 text-white'
             }`}
           >
-            {isRunning ? 'Processing...' : 'Run Compiler'}
+            {isRunning ? 'Processing...' : 'Run'}
           </button>
         </div>
       </div>
